@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { useGradeStore } from '../store/gradeStore';
 import { calculateTBM } from '../utils/gradeUtils';
 import { Card } from '../components/Card';

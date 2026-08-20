@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Subject, Score } from '../types';
+import { type Subject, type Score } from '../types';
 
 interface GradeState {
   subjects: Subject[];

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTaskStore } from '../store/taskStore';
-import { Task, TaskStatus } from '../types';
+import { type Task, type TaskStatus } from '../types';
 import { Card } from '../components/Card';
 import { cn } from '../utils/cn';
 import { Plus, GripVertical } from 'lucide-react';
@@ -11,7 +11,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent
+  type DragEndEvent
 } from '@dnd-kit/core';
 import {
   SortableContext,

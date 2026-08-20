@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '../components/Card';
 import { Play, Pause, RotateCcw } from 'lucide-react';
 import { cn } from '../utils/cn';

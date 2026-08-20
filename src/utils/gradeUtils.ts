@@ -1,4 +1,4 @@
-import { Subject } from '../types';
+import { type Subject } from '../types';
 
 export const calculateTBM = (subject: Subject): number | null => {
   if (subject.isEval) return null;
@@ -45,8 +45,6 @@ export const classifyAcademicPerformance = (subjects: Subject[]): string => {
   const evalSubjects = subjects.filter(s => s.isEval);
   const gradedSubjects = subjects.filter(s => !s.isEval);
 
-  // Nếu có môn nhận xét bị Chưa đạt (CĐ) => Chưa đạt
-  const hasFailEval = evalSubjects.some(s => s.evalResult === 'CD');
   // Nếu chưa có kết quả đánh giá thì không thể xếp loại Tốt/Khá/Đạt, nhưng tạm tính
   const isAllEvalPass = evalSubjects.every(s => s.evalResult === 'D');
 

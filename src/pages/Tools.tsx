@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card } from '../components/Card';
 import { useGradeStore } from '../store/gradeStore';
 import { calculateTBM } from '../utils/gradeUtils';
