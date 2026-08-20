@@ -3,12 +3,31 @@ import { Card } from '../components/Card';
 import { useGradeStore } from '../store/gradeStore';
 import { calculateTBM } from '../utils/gradeUtils';
 
+const ALL_COMBINATIONS = [
+  { id: 'A00', name: 'Toán, Lý, Hóa', subjects: ['Toán học', 'Vật lí', 'Hóa học'] },
+  { id: 'A01', name: 'Toán, Lý, Anh', subjects: ['Toán học', 'Vật lí', 'Tiếng Anh'] },
+  { id: 'A02', name: 'Toán, Lý, Sinh', subjects: ['Toán học', 'Vật lí', 'Sinh học'] },
+  { id: 'B00', name: 'Toán, Hóa, Sinh', subjects: ['Toán học', 'Hóa học', 'Sinh học'] },
+  { id: 'B08', name: 'Toán, Sinh, Anh', subjects: ['Toán học', 'Sinh học', 'Tiếng Anh'] },
+  { id: 'C00', name: 'Văn, Sử, Địa', subjects: ['Ngữ văn', 'Lịch sử', 'Địa lí'] },
+  { id: 'C01', name: 'Toán, Văn, Lý', subjects: ['Toán học', 'Ngữ văn', 'Vật lí'] },
+  { id: 'C02', name: 'Toán, Văn, Hóa', subjects: ['Toán học', 'Ngữ văn', 'Hóa học'] },
+  { id: 'D01', name: 'Toán, Văn, Anh', subjects: ['Toán học', 'Ngữ văn', 'Tiếng Anh'] },
+  { id: 'D02', name: 'Toán, Văn, Nga', subjects: ['Toán học', 'Ngữ văn', 'Tiếng Nga'] },
+  { id: 'D03', name: 'Toán, Văn, Pháp', subjects: ['Toán học', 'Ngữ văn', 'Tiếng Pháp'] },
+  { id: 'D04', name: 'Toán, Văn, Trung', subjects: ['Toán học', 'Ngữ văn', 'Tiếng Trung Quốc'] },
+  { id: 'D05', name: 'Toán, Văn, Đức', subjects: ['Toán học', 'Ngữ văn', 'Tiếng Đức'] },
+  { id: 'D06', name: 'Toán, Văn, Nhật', subjects: ['Toán học', 'Ngữ văn', 'Tiếng Nhật'] },
+  { id: 'D07', name: 'Toán, Hóa, Anh', subjects: ['Toán học', 'Hóa học', 'Tiếng Anh'] },
+];
+
 export function Tools() {
-  const subjects = useGradeStore((state) => state.subjects);
+  const { subjects, trackedCombinations, addCombination, removeCombination } = useGradeStore();
   const gradedSubjects = subjects.filter(s => !s.isEval);
 
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>(gradedSubjects[0]?.id || '');
   const [targetTBM, setTargetTBM] = useState<number>(8.0);
+  const [newComboId, setNewComboId] = useState<string>('');
 
   const selectedSubject = gradedSubjects.find(s => s.id === selectedSubjectId);
   
@@ -46,6 +65,10 @@ export function Tools() {
       }
     }
   }
+
+  // Khối thi user đang theo dõi
+  const userCombinations = ALL_COMBINATIONS.filter(c => trackedCombinations.includes(c.id));
+  const availableCombinations = ALL_COMBINATIONS.filter(c => !trackedCombinations.includes(c.id));
 
   return (
     <div className="space-y-6">
@@ -88,36 +111,68 @@ export function Tools() {
           </div>
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-6 flex flex-col h-full">
           <h3 className="text-lg font-semibold text-slate-800 mb-4">Dự đoán khối thi (University Predictor)</h3>
           <p className="text-sm text-slate-500 mb-4">
             Tính điểm tổ hợp xét tuyển dựa trên Điểm Trung Bình Môn (TBM) hiện tại.
           </p>
           
-          <div className="space-y-3">
-            {[
-              { id: 'A00', name: 'Toán, Lý, Hóa', subjects: ['Toán', 'Vật lí', 'Hóa học'] },
-              { id: 'A01', name: 'Toán, Lý, Anh', subjects: ['Toán', 'Vật lí', 'Ngoại ngữ'] },
-              { id: 'D01', name: 'Toán, Văn, Anh', subjects: ['Toán', 'Ngữ văn', 'Ngoại ngữ'] },
-              { id: 'B00', name: 'Toán, Hóa, Sinh', subjects: ['Toán', 'Hóa học', 'Sinh học'] },
-            ].map(block => {
-              // Map by name (this is a simplified approach, real app should map by ID)
+          <div className="flex gap-2 mb-4">
+            <select 
+              value={newComboId} 
+              onChange={e => setNewComboId(e.target.value)}
+              className="flex-1 px-3 py-2 border border-slate-300 rounded-md focus:ring-blue-500"
+            >
+              <option value="">-- Chọn tổ hợp để thêm --</option>
+              {availableCombinations.map(c => (
+                <option key={c.id} value={c.id}>{c.id} ({c.name})</option>
+              ))}
+            </select>
+            <button 
+              onClick={() => {
+                if (newComboId) addCombination(newComboId);
+                setNewComboId('');
+              }}
+              disabled={!newComboId}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Thêm
+            </button>
+          </div>
+
+          <div className="space-y-3 flex-1 overflow-y-auto pr-2">
+            {userCombinations.map(block => {
               const scores = block.subjects.map(subName => {
-                const sub = subjects.find(s => s.name === subName);
+                const sub = subjects.find(s => s.name === subName || (s.name.includes('Ngoại ngữ') && subName === 'Tiếng Anh') || (s.name === 'Toán' && subName === 'Toán học'));
                 return sub ? (calculateTBM(sub) || 0) : 0;
               });
               const total = Math.round(scores.reduce((a, b) => a + b, 0) * 10) / 10;
               
               return (
-                <div key={block.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50">
+                <div key={block.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg hover:bg-slate-50 relative group">
                   <div>
                     <span className="font-bold text-slate-700 mr-2">{block.id}</span>
                     <span className="text-sm text-slate-500">({block.name})</span>
                   </div>
-                  <div className="text-lg font-semibold text-slate-900">{total}</div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg font-semibold text-slate-900">{total}</span>
+                    <button 
+                      onClick={() => removeCombination(block.id)}
+                      className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 p-1"
+                      title="Xoá"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               );
             })}
+            
+            {userCombinations.length === 0 && (
+              <div className="text-center text-slate-500 mt-4 text-sm">
+                Bạn chưa thêm tổ hợp nào.
+              </div>
+            )}
           </div>
         </Card>
       </div>

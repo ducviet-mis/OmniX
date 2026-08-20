@@ -5,11 +5,43 @@ import { Card } from '../components/Card';
 import { Plus, Trash2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 
+const SUBJECT_OPTIONS = [
+  { label: 'Khoa học Tự nhiên (KHTN)', options: [
+    { name: 'Toán học', isEval: false, group: 'KHTN' as const },
+    { name: 'Vật lí', isEval: false, group: 'KHTN' as const },
+    { name: 'Hóa học', isEval: false, group: 'KHTN' as const },
+    { name: 'Sinh học', isEval: false, group: 'KHTN' as const },
+    { name: 'Tin học', isEval: false, group: 'KHTN' as const },
+    { name: 'Công nghệ', isEval: false, group: 'KHTN' as const }
+  ]},
+  { label: 'Khoa học Xã hội (KHXH)', options: [
+    { name: 'Ngữ văn', isEval: false, group: 'KHXH' as const },
+    { name: 'Lịch sử', isEval: false, group: 'KHXH' as const },
+    { name: 'Địa lí', isEval: false, group: 'KHXH' as const },
+    { name: 'GDKT&PL', isEval: false, group: 'KHXH' as const },
+    { name: 'Âm nhạc', isEval: true, group: 'KHXH' as const },
+    { name: 'Mĩ thuật', isEval: true, group: 'KHXH' as const }
+  ]},
+  { label: 'Môn học & Hoạt động khác', options: [
+    { name: 'Tiếng Anh', isEval: false, group: 'KHAC' as const },
+    { name: 'Giáo dục thể chất', isEval: true, group: 'KHAC' as const },
+    { name: 'GDQP&AN', isEval: true, group: 'KHAC' as const },
+    { name: 'Hoạt động trải nghiệm, hướng nghiệp', isEval: true, group: 'KHAC' as const },
+    { name: 'Nội dung giáo dục của địa phương', isEval: true, group: 'KHAC' as const },
+    { name: 'Tiếng Trung Quốc', isEval: false, group: 'KHAC' as const },
+    { name: 'Tiếng Pháp', isEval: false, group: 'KHAC' as const },
+    { name: 'Tiếng Nga', isEval: false, group: 'KHAC' as const },
+    { name: 'Tiếng Nhật', isEval: false, group: 'KHAC' as const },
+    { name: 'Tiếng Hàn', isEval: false, group: 'KHAC' as const },
+    { name: 'Tiếng Đức', isEval: false, group: 'KHAC' as const }
+  ]}
+];
+
 export function Grades() {
   const { subjects, updateScore, addScoreColumn, removeScoreColumn, updateEvalResult, addSubject, removeSubject } = useGradeStore();
   
   const [isAddingSubject, setIsAddingSubject] = useState(false);
-  const [newSubject, setNewSubject] = useState({ name: '', isEval: false, group: 'KHTN' as const });
+  const [selectedSubjectName, setSelectedSubjectName] = useState<string>('Toán học');
 
   const renderScoreInput = (subjectId: string, type: 'tx' | 'gk' | 'ck', score: { id: string, value: number }) => (
     <div key={score.id} className="relative group inline-block mr-2 mb-2">
@@ -39,10 +71,28 @@ export function Grades() {
 
   const handleAddSubject = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSubject.name.trim()) return;
-    addSubject(newSubject);
-    setIsAddingSubject(false);
-    setNewSubject({ name: '', isEval: false, group: 'KHTN' });
+    if (!selectedSubjectName) return;
+    
+    // Kiểm tra môn học đã tồn tại chưa
+    if (subjects.some(s => s.name === selectedSubjectName)) {
+      alert('Môn học này đã có trong danh sách!');
+      return;
+    }
+
+    // Tìm thông tin môn học
+    let subjInfo = null;
+    for (const group of SUBJECT_OPTIONS) {
+      const found = group.options.find(o => o.name === selectedSubjectName);
+      if (found) {
+        subjInfo = found;
+        break;
+      }
+    }
+
+    if (subjInfo) {
+      addSubject(subjInfo);
+      setIsAddingSubject(false);
+    }
   };
 
   return (
@@ -61,40 +111,25 @@ export function Grades() {
       {isAddingSubject && (
         <Card className="p-4 bg-slate-50 border-blue-200">
           <form onSubmit={handleAddSubject} className="flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-medium text-slate-700 mb-1">Tên môn học</label>
-              <input 
-                required 
-                type="text" 
-                value={newSubject.name} 
-                onChange={e => setNewSubject({...newSubject, name: e.target.value})} 
-                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-blue-500" 
-                placeholder="VD: Toán, Ngữ văn..." 
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Loại môn</label>
+            <div className="flex-1 min-w-[300px]">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Chọn môn học</label>
               <select 
-                value={newSubject.group} 
-                onChange={e => setNewSubject({...newSubject, group: e.target.value as any})} 
+                value={selectedSubjectName} 
+                onChange={e => setSelectedSubjectName(e.target.value)} 
                 className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-blue-500"
               >
-                <option value="KHTN">Khoa học Tự nhiên</option>
-                <option value="KHXH">Khoa học Xã hội</option>
-                <option value="KHAC">Khác</option>
+                {SUBJECT_OPTIONS.map((group, idx) => (
+                  <optgroup key={idx} label={group.label}>
+                    {group.options.map(opt => (
+                      <option key={opt.name} value={opt.name} disabled={subjects.some(s => s.name === opt.name)}>
+                        {opt.name} {subjects.some(s => s.name === opt.name) ? '(Đã thêm)' : ''}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
               </select>
             </div>
-            <div className="flex items-center h-[42px] px-2">
-              <label className="flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={newSubject.isEval}
-                  onChange={e => setNewSubject({...newSubject, isEval: e.target.checked})}
-                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm font-medium text-slate-700">Đánh giá bằng Nhận xét</span>
-              </label>
-            </div>
+            
             <div className="flex gap-2 h-[42px]">
               <button type="button" onClick={() => setIsAddingSubject(false)} className="px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-100">Hủy</button>
               <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Lưu</button>

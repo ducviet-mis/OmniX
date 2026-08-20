@@ -4,6 +4,7 @@ import { type Subject, type Score } from '../types';
 
 interface GradeState {
   subjects: Subject[];
+  trackedCombinations: string[];
   addSubject: (subject: Omit<Subject, 'id' | 'tx' | 'gk' | 'ck'>) => void;
   removeSubject: (id: string) => void;
   updateScore: (
@@ -15,19 +16,22 @@ interface GradeState {
   addScoreColumn: (subjectId: string, type: 'tx' | 'gk' | 'ck') => void;
   removeScoreColumn: (subjectId: string, type: 'tx' | 'gk' | 'ck', scoreId: string) => void;
   updateEvalResult: (subjectId: string, result: 'D' | 'CD' | null) => void;
+  addCombination: (comboId: string) => void;
+  removeCombination: (comboId: string) => void;
 }
 
 const initialSubjects: Subject[] = [
-  { id: 'math', name: 'Toán', isEval: false, group: 'KHTN', tx: [], gk: [], ck: [] },
+  { id: 'math', name: 'Toán học', isEval: false, group: 'KHTN', tx: [], gk: [], ck: [] },
   { id: 'lit', name: 'Ngữ văn', isEval: false, group: 'KHXH', tx: [], gk: [], ck: [] },
-  { id: 'eng', name: 'Ngoại ngữ', isEval: false, group: 'KHAC', tx: [], gk: [], ck: [] },
-  { id: 'pe', name: 'Thể dục', isEval: true, group: 'KHAC', tx: [], gk: [], ck: [] },
+  { id: 'eng', name: 'Tiếng Anh', isEval: false, group: 'KHAC', tx: [], gk: [], ck: [] },
+  { id: 'pe', name: 'Giáo dục thể chất', isEval: true, group: 'KHAC', tx: [], gk: [], ck: [] },
 ];
 
 export const useGradeStore = create<GradeState>()(
   persist(
     (set) => ({
       subjects: initialSubjects,
+      trackedCombinations: ['A00', 'A01', 'D01', 'B00'],
       
       addSubject: (sub) => set((state) => ({
         subjects: [
@@ -84,6 +88,16 @@ export const useGradeStore = create<GradeState>()(
             evalResult: result
           };
         })
+      })),
+
+      addCombination: (comboId) => set((state) => ({
+        trackedCombinations: state.trackedCombinations.includes(comboId) 
+          ? state.trackedCombinations 
+          : [...state.trackedCombinations, comboId]
+      })),
+
+      removeCombination: (comboId) => set((state) => ({
+        trackedCombinations: state.trackedCombinations.filter(id => id !== comboId)
       }))
     }),
     {
