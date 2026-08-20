@@ -1,25 +1,9 @@
 import { useState } from 'react';
 import { useTaskStore } from '../store/taskStore';
-import { type Task, type TaskStatus } from '../types';
+import { type TaskStatus } from '../types';
 import { Card } from '../components/Card';
 import { cn } from '../utils/cn';
-import { Plus, GripVertical } from 'lucide-react';
-import { 
-  DndContext, 
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { Plus, GripVertical, Trash2 } from 'lucide-react';
 
 const COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
   { id: 'TODO', title: 'Cần làm', color: 'bg-slate-100' },
@@ -27,90 +11,44 @@ const COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
   { id: 'DONE', title: 'Hoàn thành', color: 'bg-green-50' }
 ];
 
-function SortableTaskItem({ task }: { task: Task }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 100 : 'auto',
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  const priorityColors = {
-    HIGH: 'text-red-700 bg-red-100',
-    MEDIUM: 'text-yellow-700 bg-yellow-100',
-    LOW: 'text-green-700 bg-green-100',
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 cursor-default group"
-    >
-      <div className="flex items-start">
-        <div 
-          {...attributes} 
-          {...listeners}
-          className="mt-1 mr-2 cursor-grab text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <GripVertical className="w-4 h-4" />
-        </div>
-        <div className="flex-1">
-          <h4 className="text-sm font-medium text-slate-900">{task.title}</h4>
-          {task.description && (
-            <p className="text-xs text-slate-500 mt-1 line-clamp-2">{task.description}</p>
-          )}
-          <div className="mt-3 flex items-center justify-between">
-            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", priorityColors[task.priority])}>
-              {task.priority}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function Tasks() {
-  const { tasks, addTask, updateTaskStatus } = useTaskStore();
+  const { tasks, addTask, updateTaskStatus, removeTask } = useTaskStore();
   const [isAdding, setIsAdding] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  
+  // Trạng thái cho cột đang được drag over để thêm highlight
+  const [dragOverCol, setDragOverCol] = useState<TaskStatus | null>(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData('taskId', taskId);
+    // Để có hiệu ứng mờ cho phần tử gốc
+    setTimeout(() => {
+      (e.target as HTMLElement).classList.add('opacity-50');
+    }, 0);
+  };
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) return;
+  const handleDragEnd = (e: React.DragEvent) => {
+    (e.target as HTMLElement).classList.remove('opacity-50');
+    setDragOverCol(null);
+  };
 
-    const taskId = active.id as string;
-    const overId = over.id as string;
-
-    const activeTask = tasks.find(t => t.id === taskId);
-    if (!activeTask) return;
-
-    // Check if drop over a column
-    const isOverColumn = COLUMNS.some(col => col.id === overId);
-    if (isOverColumn && activeTask.status !== overId) {
-      updateTaskStatus(taskId, overId as TaskStatus);
-      return;
+  const handleDragOver = (e: React.DragEvent, colId: TaskStatus) => {
+    e.preventDefault(); // Cho phép drop
+    if (dragOverCol !== colId) {
+      setDragOverCol(colId);
     }
+  };
 
-    // Check if drop over another task
-    const overTask = tasks.find(t => t.id === overId);
-    if (overTask && activeTask.status !== overTask.status) {
-      updateTaskStatus(taskId, overTask.status);
+  const handleDragLeave = () => {
+    setDragOverCol(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, colId: TaskStatus) => {
+    e.preventDefault();
+    setDragOverCol(null);
+    const taskId = e.dataTransfer.getData('taskId');
+    if (taskId) {
+      updateTaskStatus(taskId, colId);
     }
   };
 
@@ -125,6 +63,12 @@ export function Tasks() {
     });
     setNewTaskTitle('');
     setIsAdding(false);
+  };
+
+  const priorityColors = {
+    HIGH: 'text-red-700 bg-red-100',
+    MEDIUM: 'text-yellow-700 bg-yellow-100',
+    LOW: 'text-green-700 bg-green-100',
   };
 
   return (
@@ -157,31 +101,76 @@ export function Tasks() {
         </form>
       )}
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {COLUMNS.map(column => {
-            const columnTasks = tasks.filter(t => t.status === column.id);
-            return (
-              <Card key={column.id} className={cn("p-4 flex flex-col h-full", column.color)} id={column.id}>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-slate-800">{column.title}</h3>
-                  <span className="bg-white text-slate-500 text-xs px-2 py-1 rounded-full shadow-sm font-medium">
-                    {columnTasks.length}
-                  </span>
-                </div>
-                
-                <SortableContext items={columnTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                  <div className="flex-1 space-y-3 min-h-[200px]">
-                    {columnTasks.map(task => (
-                      <SortableTaskItem key={task.id} task={task} />
-                    ))}
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6">
+        {COLUMNS.map(column => {
+          const columnTasks = tasks.filter(t => t.status === column.id);
+          const isDragOver = dragOverCol === column.id;
+          
+          return (
+            <Card 
+              key={column.id} 
+              className={cn(
+                "p-4 flex flex-col h-full transition-colors", 
+                column.color,
+                isDragOver ? "ring-2 ring-blue-400 bg-opacity-70" : ""
+              )}
+              onDragOver={(e) => handleDragOver(e, column.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, column.id)}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-slate-800">{column.title}</h3>
+                <span className="bg-white text-slate-500 text-xs px-2 py-1 rounded-full shadow-sm font-medium">
+                  {columnTasks.length}
+                </span>
+              </div>
+              
+              <div className="flex-1 space-y-3 min-h-[200px]">
+                {columnTasks.map(task => (
+                  <div
+                    key={task.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, task.id)}
+                    onDragEnd={handleDragEnd}
+                    className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 cursor-grab active:cursor-grabbing group transition-all hover:shadow-md"
+                  >
+                    <div className="flex items-start">
+                      <div className="mt-1 mr-2 text-slate-400 opacity-50 group-hover:opacity-100">
+                        <GripVertical className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-sm font-medium text-slate-900 pr-6 relative">
+                          {task.title}
+                          <button 
+                            onClick={() => removeTask(task.id)}
+                            className="absolute -right-2 -top-1 p-1 text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </h4>
+                        {task.description && (
+                          <p className="text-xs text-slate-500 mt-1 line-clamp-2">{task.description}</p>
+                        )}
+                        <div className="mt-3 flex items-center justify-between">
+                          <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", priorityColors[task.priority])}>
+                            {task.priority}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </SortableContext>
-              </Card>
-            );
-          })}
-        </div>
-      </DndContext>
+                ))}
+                
+                {columnTasks.length === 0 && (
+                  <div className="h-20 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center text-slate-400 text-sm">
+                    Kéo thả vào đây
+                  </div>
+                )}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 }

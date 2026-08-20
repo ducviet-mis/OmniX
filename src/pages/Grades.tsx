@@ -1,4 +1,4 @@
-
+import { useState } from 'react';
 import { useGradeStore } from '../store/gradeStore';
 import { calculateTBM } from '../utils/gradeUtils';
 import { Card } from '../components/Card';
@@ -6,7 +6,10 @@ import { Plus, Trash2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 export function Grades() {
-  const { subjects, updateScore, addScoreColumn, removeScoreColumn, updateEvalResult } = useGradeStore();
+  const { subjects, updateScore, addScoreColumn, removeScoreColumn, updateEvalResult, addSubject, removeSubject } = useGradeStore();
+  
+  const [isAddingSubject, setIsAddingSubject] = useState(false);
+  const [newSubject, setNewSubject] = useState({ name: '', isEval: false, group: 'KHTN' as const });
 
   const renderScoreInput = (subjectId: string, type: 'tx' | 'gk' | 'ck', score: { id: string, value: number }) => (
     <div key={score.id} className="relative group inline-block mr-2 mb-2">
@@ -34,8 +37,72 @@ export function Grades() {
     </div>
   );
 
+  const handleAddSubject = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSubject.name.trim()) return;
+    addSubject(newSubject);
+    setIsAddingSubject(false);
+    setNewSubject({ name: '', isEval: false, group: 'KHTN' });
+  };
+
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-slate-800">Quản lý điểm số</h2>
+        <button 
+          onClick={() => setIsAddingSubject(!isAddingSubject)}
+          className="flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Thêm môn học
+        </button>
+      </div>
+
+      {isAddingSubject && (
+        <Card className="p-4 bg-slate-50 border-blue-200">
+          <form onSubmit={handleAddSubject} className="flex flex-wrap gap-4 items-end">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Tên môn học</label>
+              <input 
+                required 
+                type="text" 
+                value={newSubject.name} 
+                onChange={e => setNewSubject({...newSubject, name: e.target.value})} 
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-blue-500" 
+                placeholder="VD: Toán, Ngữ văn..." 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Loại môn</label>
+              <select 
+                value={newSubject.group} 
+                onChange={e => setNewSubject({...newSubject, group: e.target.value as any})} 
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-blue-500"
+              >
+                <option value="KHTN">Khoa học Tự nhiên</option>
+                <option value="KHXH">Khoa học Xã hội</option>
+                <option value="KHAC">Khác</option>
+              </select>
+            </div>
+            <div className="flex items-center h-[42px] px-2">
+              <label className="flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={newSubject.isEval}
+                  onChange={e => setNewSubject({...newSubject, isEval: e.target.checked})}
+                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                />
+                <span className="ml-2 text-sm font-medium text-slate-700">Đánh giá bằng Nhận xét</span>
+              </label>
+            </div>
+            <div className="flex gap-2 h-[42px]">
+              <button type="button" onClick={() => setIsAddingSubject(false)} className="px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-100">Hủy</button>
+              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Lưu</button>
+            </div>
+          </form>
+        </Card>
+      )}
+
       <Card className="overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead className="bg-slate-50 border-b border-slate-200 text-slate-700">
@@ -49,10 +116,25 @@ export function Grades() {
           </thead>
           <tbody className="divide-y divide-slate-200">
             {subjects.map(subject => (
-              <tr key={subject.id} className="hover:bg-slate-50/50">
-                <td className="px-6 py-4 font-medium text-slate-900">
-                  {subject.name}
-                  {subject.isEval && <span className="block text-xs text-slate-500 font-normal mt-1">(Đánh giá nhận xét)</span>}
+              <tr key={subject.id} className="hover:bg-slate-50/50 group">
+                <td className="px-6 py-4 font-medium text-slate-900 relative">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      {subject.name}
+                      {subject.isEval && <span className="block text-xs text-slate-500 font-normal mt-1">(Đánh giá nhận xét)</span>}
+                    </div>
+                    <button 
+                      onClick={() => {
+                        if(confirm('Bạn có chắc chắn muốn xóa môn này? Toàn bộ điểm sẽ bị mất.')) {
+                          removeSubject(subject.id);
+                        }
+                      }}
+                      className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                      title="Xóa môn học"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
                 
                 {subject.isEval ? (
@@ -133,6 +215,11 @@ export function Grades() {
             ))}
           </tbody>
         </table>
+        {subjects.length === 0 && (
+          <div className="p-8 text-center text-slate-500">
+            Chưa có môn học nào. Hãy thêm môn học mới!
+          </div>
+        )}
       </Card>
     </div>
   );
