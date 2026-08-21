@@ -1,24 +1,63 @@
 import { useState } from 'react';
 import { Card } from '../components/Card';
+import { Modal } from '../components/Modal';
 import { useGradeStore } from '../store/gradeStore';
 import { calculateTBM } from '../utils/gradeUtils';
 
 const ALL_COMBINATIONS = [
-  { id: 'A00', name: 'Toán, Lý, Hóa', subjects: ['Toán học', 'Vật lí', 'Hóa học'] },
-  { id: 'A01', name: 'Toán, Lý, Anh', subjects: ['Toán học', 'Vật lí', 'Tiếng Anh'] },
-  { id: 'A02', name: 'Toán, Lý, Sinh', subjects: ['Toán học', 'Vật lí', 'Sinh học'] },
-  { id: 'B00', name: 'Toán, Hóa, Sinh', subjects: ['Toán học', 'Hóa học', 'Sinh học'] },
-  { id: 'B08', name: 'Toán, Sinh, Anh', subjects: ['Toán học', 'Sinh học', 'Tiếng Anh'] },
-  { id: 'C00', name: 'Văn, Sử, Địa', subjects: ['Ngữ văn', 'Lịch sử', 'Địa lí'] },
-  { id: 'C01', name: 'Toán, Văn, Lý', subjects: ['Toán học', 'Ngữ văn', 'Vật lí'] },
-  { id: 'C02', name: 'Toán, Văn, Hóa', subjects: ['Toán học', 'Ngữ văn', 'Hóa học'] },
-  { id: 'D01', name: 'Toán, Văn, Anh', subjects: ['Toán học', 'Ngữ văn', 'Tiếng Anh'] },
-  { id: 'D02', name: 'Toán, Văn, Nga', subjects: ['Toán học', 'Ngữ văn', 'Tiếng Nga'] },
-  { id: 'D03', name: 'Toán, Văn, Pháp', subjects: ['Toán học', 'Ngữ văn', 'Tiếng Pháp'] },
-  { id: 'D04', name: 'Toán, Văn, Trung', subjects: ['Toán học', 'Ngữ văn', 'Tiếng Trung Quốc'] },
-  { id: 'D05', name: 'Toán, Văn, Đức', subjects: ['Toán học', 'Ngữ văn', 'Tiếng Đức'] },
-  { id: 'D06', name: 'Toán, Văn, Nhật', subjects: ['Toán học', 'Ngữ văn', 'Tiếng Nhật'] },
-  { id: 'D07', name: 'Toán, Hóa, Anh', subjects: ['Toán học', 'Hóa học', 'Tiếng Anh'] },
+  // Khối A
+  { id: 'A00', name: 'Toán, Vật lý, Hóa học', subjects: ['Toán học', 'Vật lí', 'Hóa học'] },
+  { id: 'A01', name: 'Toán, Vật lý, Tiếng Anh', subjects: ['Toán học', 'Vật lí', 'Tiếng Anh'] },
+  { id: 'A02', name: 'Toán, Vật lý, Sinh học', subjects: ['Toán học', 'Vật lí', 'Sinh học'] },
+  { id: 'A03', name: 'Toán, Vật lý, Lịch sử', subjects: ['Toán học', 'Vật lí', 'Lịch sử'] },
+  { id: 'A04', name: 'Toán, Vật lý, Địa lí', subjects: ['Toán học', 'Vật lí', 'Địa lí'] },
+  { id: 'A05', name: 'Toán, Hóa học, Lịch sử', subjects: ['Toán học', 'Hóa học', 'Lịch sử'] },
+  { id: 'A06', name: 'Toán, Hóa học, Địa lí', subjects: ['Toán học', 'Hóa học', 'Địa lí'] },
+  { id: 'A07', name: 'Toán, Lịch sử, Địa lí', subjects: ['Toán học', 'Lịch sử', 'Địa lí'] },
+  { id: 'A08', name: 'Toán, Lịch sử, Giáo dục KT&PL', subjects: ['Toán học', 'Lịch sử', 'GDKT&PL'] },
+  // Khối B
+  { id: 'B00', name: 'Toán, Hóa học, Sinh học', subjects: ['Toán học', 'Hóa học', 'Sinh học'] },
+  { id: 'B01', name: 'Toán, Sinh học, Lịch sử', subjects: ['Toán học', 'Sinh học', 'Lịch sử'] },
+  { id: 'B02', name: 'Toán, Sinh học, Địa lí', subjects: ['Toán học', 'Sinh học', 'Địa lí'] },
+  { id: 'B03', name: 'Toán, Ngữ văn, Sinh học', subjects: ['Toán học', 'Ngữ văn', 'Sinh học'] },
+  // Khối C
+  { id: 'C00', name: 'Ngữ văn, Lịch sử, Địa lí', subjects: ['Ngữ văn', 'Lịch sử', 'Địa lí'] },
+  { id: 'C01', name: 'Toán, Ngữ văn, Vật lý', subjects: ['Toán học', 'Ngữ văn', 'Vật lí'] },
+  { id: 'C02', name: 'Toán, Ngữ văn, Hóa học', subjects: ['Toán học', 'Ngữ văn', 'Hóa học'] },
+  { id: 'C03', name: 'Toán, Ngữ văn, Lịch sử', subjects: ['Toán học', 'Ngữ văn', 'Lịch sử'] },
+  { id: 'C04', name: 'Ngữ văn, Toán, Địa lí', subjects: ['Ngữ văn', 'Toán học', 'Địa lí'] },
+  { id: 'C05', name: 'Ngữ văn, Vật lý, Hóa học', subjects: ['Ngữ văn', 'Vật lí', 'Hóa học'] },
+  { id: 'C06', name: 'Ngữ văn, Vật lý, Sinh học', subjects: ['Ngữ văn', 'Vật lí', 'Sinh học'] },
+  { id: 'C07', name: 'Ngữ văn, Vật lý, Lịch sử', subjects: ['Ngữ văn', 'Vật lí', 'Lịch sử'] },
+  { id: 'C08', name: 'Ngữ văn, Hóa học, Sinh học', subjects: ['Ngữ văn', 'Hóa học', 'Sinh học'] },
+  { id: 'C09', name: 'Ngữ văn, Vật lý, Địa lí', subjects: ['Ngữ văn', 'Vật lí', 'Địa lí'] },
+  { id: 'C10', name: 'Ngữ văn, Hóa học, Lịch sử', subjects: ['Ngữ văn', 'Hóa học', 'Lịch sử'] },
+  { id: 'C11', name: 'Ngữ văn, Địa lí, Hóa học', subjects: ['Ngữ văn', 'Địa lí', 'Hóa học'] },
+  { id: 'C12', name: 'Ngữ văn, Sinh học, Lịch sử', subjects: ['Ngữ văn', 'Sinh học', 'Lịch sử'] },
+  { id: 'C13', name: 'Ngữ văn, Sinh học, Địa lí', subjects: ['Ngữ văn', 'Sinh học', 'Địa lí'] },
+  { id: 'C14', name: 'Ngữ văn, Toán, Giáo dục KT&PL', subjects: ['Ngữ văn', 'Toán học', 'GDKT&PL'] },
+  // Khối D
+  { id: 'D01', name: 'Ngữ văn, Toán, Tiếng Anh', subjects: ['Ngữ văn', 'Toán học', 'Tiếng Anh'] },
+  { id: 'D02', name: 'Ngữ văn, Toán, Tiếng Nga', subjects: ['Ngữ văn', 'Toán học', 'Tiếng Nga'] },
+  { id: 'D03', name: 'Ngữ văn, Toán, Tiếng Pháp', subjects: ['Ngữ văn', 'Toán học', 'Tiếng Pháp'] },
+  { id: 'D04', name: 'Ngữ văn, Toán, Tiếng Trung', subjects: ['Ngữ văn', 'Toán học', 'Tiếng Trung Quốc'] },
+  { id: 'D05', name: 'Ngữ văn, Toán, Tiếng Đức', subjects: ['Ngữ văn', 'Toán học', 'Tiếng Đức'] },
+  { id: 'D06', name: 'Ngữ văn, Toán, Tiếng Nhật', subjects: ['Ngữ văn', 'Toán học', 'Tiếng Nhật'] },
+  { id: 'D07', name: 'Toán, Hóa học, Tiếng Anh', subjects: ['Toán học', 'Hóa học', 'Tiếng Anh'] },
+  { id: 'D08', name: 'Toán, Sinh học, Tiếng Anh', subjects: ['Toán học', 'Sinh học', 'Tiếng Anh'] },
+  { id: 'D09', name: 'Toán, Tiếng Anh, Lịch sử', subjects: ['Toán học', 'Tiếng Anh', 'Lịch sử'] },
+  { id: 'D10', name: 'Toán, Tiếng Anh, Địa lí', subjects: ['Toán học', 'Tiếng Anh', 'Địa lí'] },
+  { id: 'D11', name: 'Ngữ văn, Vật lý, Tiếng Anh', subjects: ['Ngữ văn', 'Vật lí', 'Tiếng Anh'] },
+  { id: 'D12', name: 'Ngữ văn, Hóa học, Tiếng Anh', subjects: ['Ngữ văn', 'Hóa học', 'Tiếng Anh'] },
+  { id: 'D13', name: 'Ngữ văn, Sinh học, Tiếng Anh', subjects: ['Ngữ văn', 'Sinh học', 'Tiếng Anh'] },
+  { id: 'D14', name: 'Ngữ văn, Lịch sử, Tiếng Anh', subjects: ['Ngữ văn', 'Lịch sử', 'Tiếng Anh'] },
+  { id: 'D15', name: 'Ngữ văn, Địa lí, Tiếng Anh', subjects: ['Ngữ văn', 'Địa lí', 'Tiếng Anh'] },
+  // Khối X (Tổ hợp mới)
+  { id: 'X01', name: 'Toán, Ngữ văn, Giáo dục KT&PL', subjects: ['Toán học', 'Ngữ văn', 'GDKT&PL'] },
+  { id: 'X02', name: 'Toán, Ngữ văn, Tin học', subjects: ['Toán học', 'Ngữ văn', 'Tin học'] },
+  { id: 'X06', name: 'Toán, Vật lý, Tin học', subjects: ['Toán học', 'Vật lí', 'Tin học'] },
+  { id: 'X10', name: 'Toán, Hóa học, Tin học', subjects: ['Toán học', 'Hóa học', 'Tin học'] },
+  { id: 'X14', name: 'Toán, Sinh học, Tin học', subjects: ['Toán học', 'Sinh học', 'Tin học'] },
 ];
 
 export function Tools() {
@@ -28,6 +67,7 @@ export function Tools() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>(gradedSubjects[0]?.id || '');
   const [targetTBM, setTargetTBM] = useState<number>(8.0);
   const [newComboId, setNewComboId] = useState<string>('');
+  const [isAddingCombo, setIsAddingCombo] = useState<boolean>(false);
 
   const selectedSubject = gradedSubjects.find(s => s.id === selectedSubjectId);
   
@@ -112,35 +152,57 @@ export function Tools() {
         </Card>
 
         <Card className="p-6 flex flex-col h-full">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">Dự đoán khối thi (University Predictor)</h3>
-          <p className="text-sm text-slate-500 mb-4">
-            Tính điểm tổ hợp xét tuyển dựa trên Điểm Trung Bình Môn (TBM) hiện tại.
-          </p>
-          
-          <div className="flex gap-2 mb-4">
-            <select 
-              value={newComboId} 
-              onChange={e => setNewComboId(e.target.value)}
-              className="flex-1 px-3 py-2 border border-slate-300 rounded-md focus:ring-blue-500"
-            >
-              <option value="">-- Chọn tổ hợp để thêm --</option>
-              {availableCombinations.map(c => (
-                <option key={c.id} value={c.id}>{c.id} ({c.name})</option>
-              ))}
-            </select>
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-800">Dự đoán khối thi</h3>
+              <p className="text-sm text-slate-500">
+                Tính điểm xét tuyển dựa trên Điểm Trung Bình Môn hiện tại.
+              </p>
+            </div>
             <button 
-              onClick={() => {
-                if (newComboId) addCombination(newComboId);
-                setNewComboId('');
-              }}
-              disabled={!newComboId}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => setIsAddingCombo(true)}
+              className="flex items-center px-3 py-1.5 bg-slate-100 text-slate-700 text-sm font-medium rounded-md hover:bg-slate-200 transition-colors"
             >
-              Thêm
+              Thêm khối
             </button>
           </div>
 
-          <div className="space-y-3 flex-1 overflow-y-auto pr-2">
+          <Modal isOpen={isAddingCombo} onClose={() => setIsAddingCombo(false)} title="Thêm tổ hợp xét tuyển">
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600">Chọn khối thi bạn muốn theo dõi điểm số dự báo:</p>
+              <select 
+                value={newComboId} 
+                onChange={e => setNewComboId(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-blue-500"
+              >
+                <option value="">-- Chọn tổ hợp để thêm --</option>
+                {availableCombinations.map(c => (
+                  <option key={c.id} value={c.id}>{c.id} ({c.name})</option>
+                ))}
+              </select>
+              <div className="flex justify-end gap-2 mt-6">
+                <button 
+                  onClick={() => setIsAddingCombo(false)} 
+                  className="px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-100 font-medium"
+                >
+                  Hủy
+                </button>
+                <button 
+                  onClick={() => {
+                    if (newComboId) addCombination(newComboId);
+                    setNewComboId('');
+                    setIsAddingCombo(false);
+                  }}
+                  disabled={!newComboId}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium disabled:opacity-50"
+                >
+                  Thêm
+                </button>
+              </div>
+            </div>
+          </Modal>
+
+          <div className="space-y-3 flex-1 overflow-y-auto pr-2 mt-2">
             {userCombinations.map(block => {
               const scores = block.subjects.map(subName => {
                 const sub = subjects.find(s => s.name === subName || (s.name.includes('Ngoại ngữ') && subName === 'Tiếng Anh') || (s.name === 'Toán' && subName === 'Toán học'));

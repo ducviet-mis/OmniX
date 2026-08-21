@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useScheduleStore } from '../store/scheduleStore';
 import { Card } from '../components/Card';
+import { Modal } from '../components/Modal';
 import { Plus, Trash2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 
@@ -40,42 +41,47 @@ export function Schedule() {
         </button>
       </div>
 
-      {isAdding && (
-        <Card className="p-4 bg-slate-50 border-blue-200">
-          <form onSubmit={handleAdd} className="flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm text-slate-700 mb-1">Môn học / Sự kiện</label>
-              <input required type="text" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} className="w-full px-3 py-2 border rounded-md" placeholder="VD: Toán, Học thêm Lý..." />
-            </div>
+      <Modal isOpen={isAdding} onClose={() => setIsAdding(false)} title="Thêm lịch học mới">
+        <form onSubmit={handleAdd} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Môn học / Sự kiện</label>
+            <input required type="text" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-blue-500" placeholder="VD: Toán, Học thêm Lý..." />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-slate-700 mb-1">Thứ</label>
-              <select value={newEvent.dayOfWeek} onChange={e => setNewEvent({...newEvent, dayOfWeek: parseInt(e.target.value)})} className="px-3 py-2 border rounded-md">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Thứ</label>
+              <select value={newEvent.dayOfWeek} onChange={e => setNewEvent({...newEvent, dayOfWeek: parseInt(e.target.value)})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-blue-500">
                 {DAY_INDEXES.map((d, i) => <option key={d} value={d}>{DAYS[i]}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm text-slate-700 mb-1">Bắt đầu</label>
-              <input required type="time" value={newEvent.startTime} onChange={e => setNewEvent({...newEvent, startTime: e.target.value})} className="px-3 py-2 border rounded-md" />
-            </div>
-            <div>
-              <label className="block text-sm text-slate-700 mb-1">Kết thúc</label>
-              <input required type="time" value={newEvent.endTime} onChange={e => setNewEvent({...newEvent, endTime: e.target.value})} className="px-3 py-2 border rounded-md" />
-            </div>
-            <div>
-              <label className="block text-sm text-slate-700 mb-1">Loại</label>
-              <select value={newEvent.type} onChange={e => setNewEvent({...newEvent, type: e.target.value as any})} className="px-3 py-2 border rounded-md">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Loại</label>
+              <select value={newEvent.type} onChange={e => setNewEvent({...newEvent, type: e.target.value as any})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-blue-500">
                 <option value="MAIN">Học chính</option>
                 <option value="EXTRA">Học thêm</option>
                 <option value="EXAM">Lịch thi</option>
               </select>
             </div>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setIsAdding(false)} className="px-4 py-2 border border-slate-300 text-slate-700 rounded-md">Hủy</button>
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md">Lưu</button>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Bắt đầu</label>
+              <input required type="time" value={newEvent.startTime} onChange={e => setNewEvent({...newEvent, startTime: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-blue-500" />
             </div>
-          </form>
-        </Card>
-      )}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Kết thúc</label>
+              <input required type="time" value={newEvent.endTime} onChange={e => setNewEvent({...newEvent, endTime: e.target.value})} className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-blue-500" />
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-2 mt-6">
+            <button type="button" onClick={() => setIsAdding(false)} className="px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-100 font-medium">Hủy</button>
+            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium">Thêm lịch</button>
+          </div>
+        </form>
+      </Modal>
 
       <div className="grid grid-cols-1 xl:grid-cols-7 gap-4">
         {DAY_INDEXES.map((dayIdx, i) => {
